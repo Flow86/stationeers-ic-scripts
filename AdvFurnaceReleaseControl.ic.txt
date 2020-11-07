@@ -1,0 +1,98 @@
+#
+# Furnace Chamber + Release Script v1.0
+# written by Flow86 07.11.2020
+#
+###################################################
+
+alias dFurnace d0
+alias dReleaseLever d1
+alias dPurgeLever d2
+alias dGasSensor d3
+alias dActiveVent d4
+alias dVentLever d5
+alias ICHousing db
+
+alias rFurnaceResultHash r0
+alias rReleaseLeverOnOff r1
+alias rPurgeLeverOnOff r2
+alias rFurnaceReleaseOnOff r3
+alias rFurnaceResultHash r4
+
+alias rChamberPressure r5
+alias rVentLeverOnOff r6
+alias rActiveVentOnOff r7
+alias rActiveVentInOut r8
+alias rUnderMaxPressure r9
+alias rOverMaxPressure r10
+
+define xMinPressure 25
+define xMaxPressure 125
+define ModeOutward 0
+define ModeInward 1
+define xOff 0
+
+init:
+s dActiveVent On xOff
+
+###################################################
+start:
+
+jal readfurnace
+jal readfurnacelevers
+jal controlrelease
+
+jal readsensor
+jal readchamberlever
+jal controlvent
+
+yield
+j start
+
+###################################################
+readfurnace:
+l rFurnaceResultHash dFurnace RecipeHash
+s ICHousing Setting rFurnaceResultHash
+j ra
+
+###################################################
+readfurnacelevers:
+l rReleaseLeverOnOff dReleaseLever Setting
+l rPurgeLeverOnOff dPurgeLever Setting
+j ra
+
+###################################################
+controlrelease: 
+select rFurnaceResultHash rFurnaceResultHash rReleaseLeverOnOff 0
+or rFurnaceReleaseOnOff rFurnaceResultHash rPurgeLeverOnOff
+s dFurnace Open rFurnaceReleaseOnOff
+s ICHousing Setting rFurnaceReleaseOnOff
+j ra
+
+###################################################
+readsensor:
+l rChamberPressure dGasSensor Pressure
+j ra
+
+###################################################
+readchamberlever:
+l rVentLeverOnOff dVentLever Setting
+j ra
+
+###################################################
+controlvent:
+slt rUnderMaxPressure rChamberPressure xMaxPressure
+select rActiveVentInOut rUnderMaxPressure ModeOutward ModeInward
+
+slt rActiveVentOnOff rChamberPressure xMinPressure
+sgt rOverMaxPressure rChamberPressure xMaxPressure
+or rActiveVentOnOff rActiveVentOnOff rOverMaxPressure
+
+and rActiveVentOnOff rActiveVentOnOff rVentLeverOnOff
+
+s dActiveVent On rActiveVentOnOff
+s dActiveVent Mode rActiveVentInOut
+
+j ra
+
+#
+###################################################

@@ -1,0 +1,64 @@
+#
+# AC Program
+# written by Flow86 06.11.2020
+#
+###################################################
+
+alias PipeAnalyserIn d0
+alias VolumePumpShortcut d1
+alias VolumePumpLoop d2
+alias PipeAnalyserOut d3
+alias ICHousing db
+
+alias PipeTemperatureInC r0
+alias PipeTemperatureOutC r1
+alias VolumePumpShortcutOnOff r2
+alias VolumePumpLoopOnOff r3
+alias ACOnOff r4
+
+# temperature handling
+define OffsetK2C 273.15
+define MaxTemperatureC 20
+
+###################################################
+start:
+
+jal read_temperature
+jal control_pump
+jal control_ac
+
+yield
+j start
+
+###################################################
+# read temperature
+read_temperature:
+l PipeTemperatureInC PipeAnalyserIn Temperature
+sub PipeTemperatureInC PipeTemperatureInC OffsetK2C
+
+l PipeTemperatureOutC PipeAnalyserOut Temperature
+sub PipeTemperatureOutC PipeTemperatureOutC OffsetK2C
+
+j ra
+
+###################################################
+# set control pump on/off
+control_pump:
+slt VolumePumpShortcutOnOff PipeTemperatureInC MaxTemperatureC
+s VolumePumpShortcut On VolumePumpShortcutOnOff
+
+slt VolumePumpLoopOnOff PipeTemperatureOutC MaxTemperatureC
+s VolumePumpShortcut On VolumePumpLoopOnOff
+
+j ra
+
+###################################################
+# set ac on/off
+control_ac:
+sgt ACOnOff PipeTemperatureInC MaxTemperatureC
+s ICHousing Setting ACOnOff
+
+j ra
+
+#
+###################################################

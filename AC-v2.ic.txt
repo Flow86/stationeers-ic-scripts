@@ -1,0 +1,74 @@
+#
+# AC Program v2.0
+# written by Flow86 07.11.2020
+#
+###################################################
+
+alias dPipeAnalyser d0
+alias dAirConditioner d1
+alias dVolumePumpIn d3
+alias dVolumePumpOut d4
+alias ICHousing db
+
+alias rPipeTemperatureC r0
+alias rACOnOff r1
+alias rVolumePumpOutOnOff r2
+alias rACOffCounter r3
+alias rACOffCounterOnOff r4
+
+# temperature handling
+define xOffsetK2C 273.15
+define xTargetTemperatureC 20
+define xToggleCounterMax 100
+
+init:
+s dAirConditioner Open 0
+s dVolumePumpIn On 1
+s dVolumePumpOut On 0
+
+###################################################
+start:
+
+jal readtemperature
+jal controlac
+jal controlvolumepumpout
+
+yield
+j start
+
+###################################################
+# read temperature
+readtemperature:
+l rPipeTemperatureC dPipeAnalyser Temperature
+sub rPipeTemperatureC rPipeTemperatureC xOffsetK2C
+
+#s ICHousing Setting rPipeTemperatureC
+
+j ra
+
+###################################################
+# set ac on/off
+controlac:
+sgt rACOnOff rPipeTemperatureC xTargetTemperatureC
+
+add rACOffCounter rACOffCounter 1
+mod rACOffCounter rACOffCounter xToggleCounterMax
+s ICHousing Setting rACOffCounter
+
+seqz rACOffCounterOnOff rACOffCounter
+select rACOnOff rACOffCounterOnOff 0 rACOnOff
+
+s dAirConditioner Open rACOnOff
+
+j ra
+
+###################################################
+controlvolumepumpout:
+slt rVolumePumpOutOnOff rPipeTemperatureC xTargetTemperatureC
+
+s dVolumePumpOut On rVolumePumpOutOnOff
+
+j ra
+
+#
+###################################################

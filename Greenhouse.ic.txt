@@ -1,0 +1,130 @@
+#
+# Greenhouse Program 1.0
+# written by Flow86 03.11.2020
+#
+# For Pressure Control: 
+# - 1x GasSensor
+# - 3x Active Vents
+#   * 1. Oxygen/O2 (input)
+#   * 2. CarbonDioxide/CO2 (input)
+#   * 3. Depressurization (output, back to filter)
+#
+# For Temperature Control:
+# - Cooling: Logic Reader & Batch Writer reading 
+#            from ICHousing "Setting" and writing 
+#            to Wall Coolers
+#
+###################################################
+
+alias GasSensor d0
+alias ActiveVentO2 d3
+alias ActiveVentCO2 d4
+alias ActiveVentDepressurize d5
+alias ICHousing db
+
+alias RoomPressure r0
+alias RoomTemperatureC r1
+alias RoomRatioO2 r2
+alias RoomRatioCO2 r3
+
+# pressure handling
+define RatioO2 0.18
+define RatioCO2 0.80
+define MinPressure 100
+define MaxPressure 105
+define OverPressure 110
+
+alias EnableO2 r4
+alias EnableCO2 r5
+alias EnableDepressurize r6
+alias IsNotOverpressure r7
+alias IsUnderpressure r8
+
+# temperature handling
+define OffsetK2C 273.15
+define MaxTemperatureC 20
+
+alias EnableCooling r9
+
+# initialization
+define ModeOutward 0
+define ModeInward 1
+
+###################################################
+start:
+
+jal load
+jal initialize
+jal compare
+jal write
+
+yield
+j start
+
+###################################################
+# load data into registers
+load:
+l RoomPressure GasSensor Pressure
+l RoomTemperatureC GasSensor Temperature
+l RoomRatioO2 GasSensor RatioOxygen
+l RoomRatioCO2 GasSensor RatioCarbonDioxide
+
+# make Celcius
+sub RoomTemperatureC RoomTemperatureC OffsetK2C
+
+j ra
+
+###################################################
+# set modes
+initialize:
+s ActiveVentO2 Mode ModeOutward
+s ActiveVentO2 PressureExternal MaxPressure
+s ActiveVentCO2 Mode ModeOutward
+s ActiveVentCO2 PressureExternal MaxPressure
+s ActiveVentDepressurize Mode ModeInward
+
+j ra
+
+###################################################
+# enable/disable based on ratios
+compare:
+# IsNotOverpressure = RoomPressure < OverPressure
+slt IsNotOverpressure RoomPressure OverPressure
+# IsUnderpressure = RoomPressure < MinPressure
+slt IsUnderpressure RoomPressure MinPressure
+
+# EnableO2 = 
+#   (RoomRatioO2 < RatioO2 || IsUnderpressure)
+#   && IsNotOverpressure
+slt EnableO2 RoomRatioO2 RatioO2
+or EnableO2 IsUnderpressure EnableO2
+and EnableO2 IsNotOverpressure EnableO2
+
+# EnableCO2 = 
+#   (RoomRatioCO2 < RatioCO2 || IsUnderpressure)
+#   && IsNotOverpressure
+slt EnableCO2 RoomRatioCO2 RatioCO2
+or EnableCO2 IsUnderpressure EnableCO2
+and EnableCO2 IsNotOverpressure EnableCO2
+
+# EnableDepressurize = RoomPressure >= MaxPressure
+sge EnableDepressurize RoomPressure MaxPressure
+
+# EnableCooling= RoomTemperatureC >= MaxTemperatureC
+sge EnableCooling RoomTemperatureC MaxTemperatureC
+
+j ra
+
+###################################################
+# write to devices
+write:
+s ActiveVentO2 On EnableO2
+s ActiveVentCO2 On EnableCO2
+s ActiveVentDepressurize On EnableDepressurize
+
+s ICHousing Setting EnableCooling
+
+j ra
+
+#
+###################################################

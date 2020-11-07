@@ -1,0 +1,79 @@
+#
+# Room Pressure+Temperature Program
+# written by Flow86 06.11.2020
+#
+###################################################
+
+alias GasSensor d0
+alias GasMixerIn d3
+alias ActiveVentIn d4
+alias ActiveVentOut d5
+alias ICHousing db
+
+alias RoomPressure r0
+alias RoomTemperatureC r1
+alias InOnOff r2
+alias OutOnOff r3
+alias CoolerOnOff r4
+
+define TargetPressure 100
+define MaxPressure 105
+define TargetTemperatureC 20
+
+define OffsetK2C 273.15
+
+define ModeOutward 0
+define ModeInward 1
+
+###################################################
+start:
+
+jal read_gassensor
+jal set_vents
+jal activate_vents
+jal control_temperature
+
+yield
+j start
+
+###################################################
+read_gassensor:
+l RoomPressure GasSensor Pressure
+l RoomTemperatureC GasSensor Temperature
+
+# make Celcius
+sub RoomTemperatureC RoomTemperatureC OffsetK2C
+
+j ra
+
+###################################################
+set_vents:
+s ActiveVentIn Mode ModeOutward
+s ActiveVentIn PressureExternal MaxPressure
+s ActiveVentOut Mode ModeInward
+
+j ra
+
+###################################################
+activate_vents:
+slt InOnOff RoomPressure TargetPressure
+
+s GasMixerIn On InOnOff 
+s ActiveVentIn On InOnOff
+
+sgt OutOnOff RoomPressure MaxPressure
+
+s ActiveVentOut On OutOnOff
+
+j ra
+
+###################################################
+control_temperature:
+sgt CoolerOnOff RoomTemperatureC TargetTemperatureC
+
+s ICHousing Setting CoolerOnOff
+
+j ra
+
+#
+###################################################

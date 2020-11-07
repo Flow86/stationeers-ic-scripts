@@ -1,0 +1,51 @@
+#
+# Furnace Fuelmixer Controller v1.0
+# written by Flow86 07.11.2020
+#
+###################################################
+
+alias dFuelTank d0
+alias dFuelMixer d1
+alias dOnOffLever d2
+
+alias rTankPressure r0
+alias rLeverOnOff r1
+alias rFuelMixerOnOff r2
+
+define xTargetPressure 10000
+define xOff 0
+
+init:
+s dFuelMixer On xOff
+
+###################################################
+start:
+
+jal readpressure
+jal readlever
+jal controlfuelmixer
+
+yield
+j start
+
+###################################################
+readpressure:
+l rTankPressure dFuelTank Pressure
+j ra
+
+###################################################
+readlever:
+l rLeverOnOff dOnOffLever Setting
+j ra
+
+###################################################
+controlfuelmixer:
+slt rFuelMixerOnOff rTankPressure xTargetPressure
+and rFuelMixerOnOff rFuelMixerOnOff rLeverOnOff
+
+s dFuelMixer On rFuelMixerOnOff
+
+j ra
+
+#
+###################################################

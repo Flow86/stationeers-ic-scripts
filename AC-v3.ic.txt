@@ -1,0 +1,54 @@
+#
+# AC Program v3.0
+# written by Flow86 07.11.2020
+#
+###################################################
+
+alias dPipeAnalyser d0
+alias dVolumePumpCoolingIn d3
+alias dVolumePumpTankOut d4
+alias ICHousing db
+
+alias rPipeTemperatureC r0
+alias rVolumePumpInOnOff r1
+alias rVolumePumpOutOnOff r2
+
+# temperature handling
+define xOffsetK2C 273.15
+define xTargetTemperatureC 20
+
+init:
+s dVolumePumpCoolingIn On 0
+s dVolumePumpTankOut On 0
+
+###################################################
+start:
+
+jal readtemperature
+jal controlvolumepumpout
+
+yield
+j start
+
+###################################################
+# read temperature
+readtemperature:
+l rPipeTemperatureC dPipeAnalyser Temperature
+sub rPipeTemperatureC rPipeTemperatureC xOffsetK2C
+
+s ICHousing Setting rPipeTemperatureC
+
+j ra
+
+###################################################
+controlvolumepumpout:
+sgt rVolumePumpInOnOff rPipeTemperatureC xTargetTemperatureC
+slt rVolumePumpOutOnOff rPipeTemperatureC xTargetTemperatureC
+
+s dVolumePumpCoolingIn On rVolumePumpInOnOff
+s dVolumePumpTankOut On rVolumePumpOutOnOff
+
+j ra
+
+#
+###################################################

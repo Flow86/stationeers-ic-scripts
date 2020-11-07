@@ -1,0 +1,73 @@
+#
+# Advanced Furnace Program v1.0
+# written by Flow86 03.11.2020
+#
+###################################################
+
+alias AdvancedFurnace d0
+alias GasMixerFuel d1
+alias GasTankFuel d2
+alias ActiveVentDepressurize d3
+alias LeverDepressurize d4
+alias LeverRelease d5
+alias ICHousing db
+
+alias ResultHash r0
+alias DepressurizeOnOff r1
+alias FuelPressure r2
+alias FuelMixerOnOff r3
+alias ReleaseOnOff r4
+
+define ModeInward 1
+define MaxPressure 4000
+
+###################################################
+start:
+
+jal furnace_result
+jal fuel
+jal lever_pressure
+jal lever_release
+
+yield
+j start
+
+###################################################
+# load result int ICHousing Setting
+furnace_result:
+l ResultHash AdvancedFurnace RecipeHash
+s ICHousing Setting ResultHash
+
+j ra
+
+###################################################
+# fuel
+fuel:
+l FuelPressure GasTankFuel Pressure
+
+# FuelMixerOnOff = FuelPressure < MaxPressure
+slt FuelMixerOnOff FuelPressure MaxPressure
+s GasMixerFuel On FuelMixerOnOff
+
+j ra
+
+
+###################################################
+# process lever
+lever_pressure:
+l DepressurizeOnOff LeverDepressurize Setting
+s ActiveVentDepressurize On DepressurizeOnOff
+s ActiveVentDepressurize Mode ModeInward
+
+j ra
+
+###################################################
+# process lever
+lever_release:
+l ReleaseOnOff LeverRelease Setting
+s AdvancedFurnace Open ReleaseOnOff
+
+j ra
+
+#
+###################################################

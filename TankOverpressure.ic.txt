@@ -1,0 +1,66 @@
+#
+# Tank Overpressure Valve Program v2.0
+# written by Flow86 07.11.2020
+#
+###################################################
+
+alias d1Tank d0
+alias d1VolumePump d1
+
+alias d2Tank d2
+alias d2VolumePump d3
+
+alias d3Tank d4
+alias d3VolumePump d5
+
+alias r1Pressure r0
+alias r2Pressure r1
+alias r3Pressure r2
+alias r1VolumePumpOnOff r3
+alias r2VolumePumpOnOff r4
+alias r3VolumePumpOnOff r5
+
+define xMaxPressure 20000
+define xVolume 10
+define xOff 0
+
+###################################################
+init:
+s d1VolumePump On xOff
+s d1VolumePump Setting xVolume
+s d2VolumePump On xOff
+s d2VolumePump Setting xVolume
+s d3VolumePump On xOff
+s d3VolumePump Setting xVolume
+
+###################################################
+start:
+
+jal readpressure
+jal controlpumps
+
+yield
+j start
+
+###################################################
+readpressure:
+l r1Pressure d1Tank Pressure
+l r2Pressure d2Tank Pressure
+l r3Pressure d3Tank Pressure
+
+j ra
+
+###################################################
+controlpumps:
+sgt r1VolumePumpOnOff r1Pressure xMaxPressure
+sgt r2VolumePumpOnOff r2Pressure xMaxPressure
+sgt r3VolumePumpOnOff r3Pressure xMaxPressure
+
+s d1VolumePump On r1VolumePumpOnOff
+s d2VolumePump On r2VolumePumpOnOff
+s d3VolumePump On r3VolumePumpOnOff
+
+j ra
+
+#
+###################################################

@@ -1,0 +1,49 @@
+#
+# Tank Fill Program
+# written by Flow86 06.11.2020
+#
+###################################################
+
+alias PipeAnalyser d0
+alias VolumePumpWater d1
+alias GasMixerO2H2 d2
+alias GasMixerO2CO2 d3
+alias GasMixerO2N d4
+alias ICHousing db
+
+alias PipePressure r0
+alias MixersOff r1
+
+# temperature handling
+define MaxPressure 8000
+define SetToOff 0
+
+###################################################
+start:
+
+jal read_pressure
+sgt MixersOff PipePressure MaxPressure
+bnezal MixersOff mixers_off
+
+s ICHousing Setting MixersOff
+
+yield
+j start
+
+###################################################
+read_pressure:
+l PipePressure PipeAnalyser Pressure
+
+j ra
+
+###################################################
+mixers_off:
+s VolumePumpWater On SetToOff
+s GasMixerO2H2 On SetToOff
+s GasMixerO2CO2 On SetToOff
+s GasMixerO2N On SetToOff
+
+j ra
+
+#
+###################################################
