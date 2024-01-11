@@ -1,0 +1,38 @@
+# Growlight Automation
+# written by Flow86
+#
+# Automates the light based on the day length
+# see https://stationeers-wiki.com/
+#     Grow_light_automation
+
+define hashGrowLight -1758710260
+
+define cDayLength 20 # min
+define cDayTime 12.5 # min (on-time)
+
+alias dDaylightSensor d0
+
+alias rDayTime r1
+alias rSolarAngle r2
+alias rGrowlightOnOff r3
+
+init:
+# degrees per minute = 360 / day length
+div rDayTime 360 cDayLength
+
+# minutes to degrees
+mul rDayTime rDayTime cDayTime
+
+# half of it before midday
+div rDayTime rDayTime 2
+
+s db Setting rDayTime
+
+start:
+l rSolarAngle dDaylightSensor rSolarAngle
+
+sle rGrowlightOnOff rSolarAngle rDayTime
+sb hashGrowLight On rGrowlightOnOff
+
+yield
+j start

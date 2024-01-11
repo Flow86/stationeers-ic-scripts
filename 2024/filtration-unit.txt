@@ -1,0 +1,49 @@
+# Chip for a Filtration Unit
+# written by Flow86
+#
+# Will reduce power usage
+# Optional alarm and pump slot
+# Change line 20 if necessary
+
+define cOnRatio 0.1
+
+alias dVolumePump d0
+alias dAlarm d1
+alias dFiltration db
+
+alias r0Ratio r0
+alias r1Slot1Occupied r1
+alias r2Slot2Occupied r2
+alias r3Alarm r3
+
+init:
+jal turn_off
+
+start:
+# see https://stationeers-wiki.com/Filtration
+l r0Ratio dFiltration RatioPollutantInput
+bgtal r0Ratio cOnRatio turn_on
+bltal r0Ratio cOnRatio turn_off
+
+bdse dAlarm check_alarm
+
+yield
+j start
+
+turn_on:
+s dFiltration Mode 1
+s dVolumePump On 1
+j ra
+
+turn_off:
+s dFiltration Mode 0
+s dVolumePump On 0
+j ra
+
+check_alarm:
+ls r1Slot1Occupied dFiltration 0 Occupied
+ls r2Slot2Occupied dFiltration 1 Occupied
+
+nor r3Alarm r1Slot1Occupied r2Slot2Occupied
+s dAlarm On r3Alarm
+j ra

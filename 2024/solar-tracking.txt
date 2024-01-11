@@ -1,0 +1,34 @@
+# Two-Axis Solar Tracking
+# written by Flow86
+#
+# Build the devices so that
+# * Sensor's Data Port are at 270°
+# * Solar Panel's Data Ports are at 270°
+#
+# Optimal values for Mars: (afaik)
+# Mars:
+# Horizontal: R - 88
+# Vertical: R + 90
+
+define cCorrectionH -88
+define cCorrectionV 90
+
+define cHashSolarPanel -1545574413
+
+alias dDaylightSensor d0
+
+alias rHorizontal r0
+alias rVertical r1
+
+start:
+l rHorizontal dDaylightSensor Horizontal
+l rVertical dDaylightSensor Vertical
+
+add rHorizontal rHorizontal cCorrectionH
+add rVertical rVertical cCorrectionV
+
+sb cHashSolarPanel Horizontal rHorizontal
+sb cHashSolarPanel Vertical rVertical
+
+yield
+j start

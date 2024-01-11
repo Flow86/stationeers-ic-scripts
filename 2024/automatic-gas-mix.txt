@@ -1,0 +1,86 @@
+# Gas Mix for Rooms (or Greenhousesw)
+# written by Flow86
+#
+# You can also directly used with Vents+GasSensor.
+# TankO2  -> PumpO2  |
+# TankN   -> PumpN   | TankMix (Analyzer) -> PumpOP
+# TankCO2 -> PumpCO2 |
+
+define cMinRatioO2 0.25    # %
+define cMinRatioN  0.10    # %
+define cMinRatioCO2 0.10   # %
+define cMaxPressure 101    # kPa
+define cDefaultPressure 75 # kPa
+define cOverPressure 10    # kPa over selection
+
+alias dAnalyzer d0
+alias dPumpOverPressure d1
+alias dDialPressure d2
+
+alias dPumpO2 d3
+alias dPumpN d4
+alias dPumpCO2 d5
+
+alias rPumpOverPressure r0
+alias rOnOffPressure r1
+alias rPumpO2 r2
+alias rPumpN r3
+alias rPumpCO2 r4
+alias rRatioO2 r5
+alias rRatioN r6
+alias rRatioCO2 r7
+alias rPressure r8
+alias rSetPressure r9
+alias rMaxPressure r10
+
+init:
+move rPumpOverPressure 0
+move rPumpO2 0
+move rPumpN 0
+move rPumpCO2 0
+s dDialPressure Mode cMaxPressure
+jal update_state
+
+start:
+#s dAnalyzer On 1
+l rRatioO2 dAnalyzer RatioOxygen
+l rRatioN dAnalyzer RatioNitrogen
+l rRatioCO2 dAnalyzer RatioCarbonDioxide
+l rPressure dAnalyzer Pressure
+
+l rSetPressure dDialPressure Setting
+slt rOnOffPressure rPressure rSetPressure
+add rMaxPressure rSetPressure cOverPressure
+
+sgt rPumpOverPressure rPressure rMaxPressure
+
+s db Setting rRatioO2
+
+slt rPumpO2 rRatioO2 cMinRatioO2
+slt rPumpN rRatioN cMinRatioN
+slt rPumpCO2 rRatioCO2 cMinRatioCO2
+
+#or rPumpO2 rOnOffPressure rPumpO2
+# fill room with nitrogen
+or rPumpN rOnOffPressure rPumpN
+#or rPumpCO2 rOnOffPressure rPumpCO2
+
+jal update_state
+yield
+j start
+
+update_state:
+s dPumpOverPressure On rPumpOverPressure
+
+# overpressure safety disables all input pumps
+select rPumpO2 rPumpOverPressure 0 rPumpO2
+select rPumpN rPumpOverPressure 0 rPumpN
+select rPumpCO2 rPumpOverPressure 0 rPumpCO2
+
+brdns dPumpO2 2
+s dPumpO2 On rPumpO2
+brdns dPumpN 2
+s dPumpN On rPumpN
+brdns dPumpCO2 2
+s dPumpCO2 On rPumpCO2
+j ra

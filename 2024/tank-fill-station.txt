@@ -1,0 +1,122 @@
+# Tank Fill/Empty Station Script (Dual)
+# written by Flow86
+#
+# * Use the dial to set the MPa
+# * You can set the hysteresis via cHysteresis
+# * You can leave the pump device 
+#   unset to disable channel
+# * Set the ModeFill/Empty according to 
+#   your turbo pump direction
+# * Do not use in impure environments, 
+#   it will pollute your input
+# * Set Dial to 0 to empty the pipe/tank
+# * Basically you can fill/empty everything
+#   as long as it has an analyzer
+
+define cDefaultPressure 0  # MPa
+define cMaxPressure 20     # MPa
+define cHysteresis 50      # Pa
+define cModeFill 1         # Right
+define cModeEmpty 0        # Left
+
+alias dPump1 d0
+alias dAnalyzer1 d1
+alias dDial1 d2
+
+alias dPump2 d3
+alias dAnalyzer2 d4
+alias dDial2 d5
+
+alias rPressure1 r0
+alias rPressure2 r1
+alias rSetPressure1 r2
+alias rSetPressure2 r3
+alias rState1 r4
+alias rState2 r5
+alias rMode1 r6
+alias rMode2 r7
+alias rMaxPressure r8
+alias rMinPressure r9
+
+init:
+move rState1 0
+move rMode1 cModeFill
+move rState2 0
+move rMode2 cModeFill
+
+bdns dPump1 init2
+jal set_pump1
+s dDial1 Mode cMaxPressure
+#s dDial1 Setting cDefaultPressure
+
+init2:
+bdns dPump2 start
+jal set_pump2
+s dDial2 Mode cMaxPressure
+#s dDial2 Setting cDefaultPressure
+
+start:
+bdns dPump1 fill2
+s dAnalyzer1 On 1
+l rPressure1 dAnalyzer1 Pressure
+l rSetPressure1 dDial1 Setting
+mul rSetPressure1 rSetPressure1 1000
+
+add rMaxPressure rSetPressure1 cHysteresis
+select rMaxPressure rSetPressure1 rMaxPressure 0
+sub rMinPressure rSetPressure1 cHysteresis
+
+move rState1 0
+bltal rPressure1 rMinPressure do_fill1
+bgtal rPressure1 rMaxPressure do_empty1
+jal set_pump1
+
+fill2:
+bdns dPump2 end
+s dAnalyzer2 On 1
+l rPressure2 dAnalyzer2 Pressure
+l rSetPressure2 dDial2 Setting
+mul rSetPressure2 rSetPressure2 1000
+
+add rMaxPressure rSetPressure2 cHysteresis
+select rMaxPressure rSetPressure2 rMaxPressure 0
+sub rMinPressure rSetPressure2 cHysteresis
+
+move rState2 0
+bltal rPressure2 rMinPressure do_fill2
+bgtal rPressure2 rMaxPressure do_empty2
+jal set_pump2
+
+end:
+yield
+j start
+
+do_fill1:
+move rMode1 cModeFill
+move rState1 1
+j ra
+
+do_empty1:
+move rMode1 cModeEmpty
+move rState1 1
+j ra
+
+set_pump1:
+s dPump1 On rState1
+s dPump1 Mode rMode1
+j ra
+
+do_fill2:
+move rMode2 cModeFill
+move rState2 1
+j ra
+
+do_empty2:
+move rMode2 cModeEmpty
+move rState2 1
+j ra
+
+set_pump2:
+s dPump2 On rState2
+s dPump2 Mode rMode2
+j ra

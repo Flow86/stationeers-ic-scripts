@@ -1,0 +1,61 @@
+# Automatic Room Temperature Control (Cooling)
+# written by Flow86
+#
+# * Use the Dial to set the temperature
+# * No heating, only cooling
+# * has a hysteresis
+
+define cHashWallCooler -739292323
+define cHashLiquidWallCooler -1369060582
+
+define cMaxTemperature 30         # °C
+define cDefaultTemperature 21     # °C
+define cHysteresisTemperature 0.5 # K
+
+alias dGasSensor d0
+alias dDialTemperature d1
+
+alias rWallCooler r0
+alias rSetTemperature r1
+alias rTemperature r2
+alias rTempHigher r3
+alias rTempLower r4
+
+init:
+move rWallCooler 0
+
+s dDialTemperature Mode cMaxTemperature
+#s dDialTemperature Setting cDefaultTemperature
+
+jal update_state
+
+start:
+l rSetTemperature dDialTemperature Setting
+add rSetTemperature rSetTemperature 273
+
+l rTemperature dGasSensor Temperature
+
+add rSetTemperature rSetTemperature cHysteresisTemperature
+sgt rTempHigher rTemperature rSetTemperature
+
+sub rSetTemperature rSetTemperature cHysteresisTemperature
+sub rSetTemperature rSetTemperature cHysteresisTemperature
+slt rTempLower rTemperature rSetTemperature
+
+# if temp > set+hyst step into
+breqz rTempHigher 2
+move rWallCooler 1
+
+# if temp < set-hyst step into
+breqz rTempLower 2
+move rWallCooler 0
+
+jal update_state
+yield
+j start
+
+update_state:
+sb cHashWallCooler On rWallCooler
+sb cHashLiquidWallCooler On rWallCooler
+s db Setting rWallCooler
+j ra
