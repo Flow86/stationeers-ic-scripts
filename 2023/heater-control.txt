@@ -1,0 +1,8 @@
+define hashWallHeater 24258244
+define hashPipeHeater -287495560
+
+alias gasSensr d0
+alias pipeAnalyzer d1
+
+init:
+

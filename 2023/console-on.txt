@@ -1,0 +1,9 @@
+# Small Script to keep all Consoles on
+
+define cHashConsole 235638270
+
+start:
+sb cHashConsole On 1
+
+yield
+j start

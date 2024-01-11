@@ -1,0 +1,29 @@
+alias d1PipeAnalyzer d0
+
+alias r1Pressure r0
+alias r2OnOffBatchWriter r1
+alias r3OnPressure r3
+alias r4OffPressure r4
+
+init:
+move r2OnOffBatchWriter 0
+move r3OnPressure 200
+move r4OffPressure 2
+
+start:
+l r1Pressure d1PipeAnalyzer Pressure
+bgtal r1Pressure r3OnPressure turn_on
+bltal r1Pressure r4OffPressure turn_off
+
+s db Setting r2OnOffBatchWriter
+
+yield
+j start
+
+turn_on:
+move r2OnOffBatchWriter 1
+j ra
+
+turn_off:
+move r2OnOffBatchWriter 0
+j ra

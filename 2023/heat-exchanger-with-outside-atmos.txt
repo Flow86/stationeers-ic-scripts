@@ -1,0 +1,71 @@
+# Controller for filling a coolant tank 
+# with outside atmosphere
+# GasSensor for outside Temp
+# Dial for Tank Pressure
+# Vent -> Tank              -> HE
+#            ^ <- Pump (On) <- |
+# Passive Vent <- Pump (d4) <- |
+#
+
+define cMaxTemperature 273 # 0°C in K
+define cMaxPressure 50     # MPa
+define cOverPressure 2000  # Pa 
+define cMinTempOut 223     # -50°C in K
+
+alias dGasSensor d0
+alias dTank d1
+alias dDial d2
+
+alias dVent d3
+alias dPumpToOutside d4
+
+alias rVent r0
+alias rPumpToOutside r2
+
+alias rOutsideTemp r3
+alias rTankTemp r4
+alias rTankPressure r5
+alias rSetPressure r6
+
+alias rOutTempHigh r7
+alias rTankPressureLow r8
+alias rTankPressureHigh r9
+
+init:
+move rVent 0
+move rPumpToOutside 0
+s dDial Mode cMaxPressure
+jal update_state
+
+start:
+l rOutsideTemp dGasSensor Temperature
+l rTankPressure dTank Pressure
+l rTankTemp dTank Temperature
+l rSetPressure dDial Setting
+mul rSetPressure rSetPressure 1000
+
+sgt rOutTempHigh rOutsideTemp cMinTempOut
+slt rTankPressureLow rTankPressure rSetPressure
+
+# enable vent if outside temperature is high enough
+# and tank pressure too low
+and rVent rOutTempHigh rTankPressureLow
+
+# release some gas to the outside if temp too high
+sgt rPumpToOutside rTankTemp cMaxTemperature
+# or if tank pressure is too high
+add rSetPressure rSetPressure cOverPressure
+sgt rTankPressureHigh rTankPressure rSetPressure
+or rPumpToOutside rPumpToOutside rTankPressureHigh
+
+jal update_state
+yield
+j start
+
+update_state:
+s dVent On rVent
+s db Setting rVent
+
+s dPumpToOutside On rPumpToOutside
+
+j ra

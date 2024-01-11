@@ -1,0 +1,78 @@
+# Room Fill
+# * Use the dial to set the kPa / temperature
+# VentIn -> Room (GasSensor) -> VentOut
+# No automatic temperature regulation, 
+# only activating fans if temp is too high
+
+define cDefaultPressure 75      # kPa
+define cMaxPressure 130         # kPa
+define cHysteresisPressure 2    # kPa
+define cDefaultTemperature 21   # °C
+define cMaxTemperature 30       # °C
+define cHysteresisTemperature 1 # K
+
+alias dGasSensor d0
+alias dDialPressure d1
+alias dDialTemperature d2
+
+alias dVentIn d3
+alias dVentOut d4
+
+alias rVentIn r0
+alias rVentOut r1
+alias rSetPressure r2
+alias rSetTemperature r3
+alias rPressure r4
+alias rTemperature r5
+alias rTempHigher r6
+alias rPressureLower r7
+alias rPressureHigher r8
+
+init:
+move rVentIn 0
+move rVentOut 0
+
+s dDialPressure Mode cMaxPressure
+#s dDialPressure Setting cDefaultPressure
+s dDialTemperature Mode cMaxTemperature
+#s dDialTemperature Setting cDefaultTemperature
+
+jal update_state
+
+start:
+l rSetPressure dDialPressure Setting
+l rSetTemperature dDialTemperature Setting
+add rSetTemperature rSetTemperature 273
+
+l rPressure dGasSensor Pressure
+l rTemperature dGasSensor Temperature
+
+# if temp > settemp -> on / on
+# if pres < setpres -> on / off
+# if pres > setpres -> off / on
+
+add rSetTemperature rSetTemperature cHysteresisTemperature
+sgt rTempHigher rTemperature rSetTemperature
+
+sub rSetPressure rSetPressure cHysteresisPressure
+slt rPressureLower rPressure rSetPressure
+add rSetPressure rSetPressure cHysteresisPressure
+add rSetPressure rSetPressure cHysteresisPressure
+sgt rPressureHigher rPressure rSetPressure
+
+# in = temp > settemp or pres < setpres
+or rVentIn rTempHigher rPressureLower
+
+# out = temp > settemp or pres > setpress
+or rVentOut rTempHigher rPressureHigher
+
+jal update_state
+yield
+j start
+
+update_state:
+s dVentIn Mode 0
+s dVentIn On rVentIn
+s dVentOut Mode 1
+s dVentOut On rVentOut
+j ra

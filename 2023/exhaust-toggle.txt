@@ -1,0 +1,18 @@
+alias d0SwitchExhaustGas d0
+alias d1VolumePump d1
+alias d2ExhaustValve d2
+
+alias r0VolumePumpOnOff r0
+alias r1ExhaustValveOnOff r1
+
+start:
+l r0VolumePumpOnOff d0SwitchExhaustGas Setting
+
+xor r1ExhaustValveOnOff r0VolumePumpOnOff 1
+
+s d1VolumePump Setting 100
+s d1VolumePump On r0VolumePumpOnOff
+s d2ExhaustValve On r1ExhaustValveOnOff
+
+yield
+j start

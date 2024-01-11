@@ -1,0 +1,62 @@
+# Helper script for filtration unit loop
+# to get the pressure differential right
+# pump1 -> pressurize pipe -> filtration units
+# filtration units -> pump2 -> empty pipe 
+
+define cDefaultPressure 40 # MPa
+define cMaxPressure 55     # MPa
+define cMaxTempK 313
+
+alias dPump1 d0     # To Filter
+alias dAnalyzer1 d1
+alias dDial1 d2
+
+alias dPump2 d3     # From Filter
+alias dAnalyzer2 d4
+#alias dDial2 d5
+
+alias rPressure1 r0
+alias rPressure2 r1
+alias rMaxPressure1 r2
+alias rMinPressure2 r3
+alias rState1 r4
+alias rState2 r5
+alias rTemp1 r6
+alias rStateTemp r6
+
+init:
+move rState1 0
+move rState2 0
+move rMinPressure2 100
+
+bdns dPump1 init2
+s dPump1 On rState1
+s dDial1 Mode cMaxPressure
+s dDial1 Setting cDefaultPressure
+
+init2:
+bdns dPump2 start
+s dPump2 On rState2
+
+start:
+bdns dPump1 fill2
+s dAnalyzer1 On 1
+l rPressure1 dAnalyzer1 Pressure
+l rTemp1 dAnalyzer1 Temperature
+l rMaxPressure1 dDial1 Setting
+mul rMaxPressure1 rMaxPressure1 1000
+slt rStateTemp rTemp1 cMaxTempK
+slt rState1 rPressure1 rMaxPressure1
+select rState1 rStateTemp rState1 0
+s dPump1 On rState1
+
+fill2:
+bdns dPump2 end
+s dAnalyzer2 On 1
+l rPressure2 dAnalyzer2 Pressure
+sgt rState2 rPressure2 rMinPressure2
+s dPump2 On rState2
+
+end:
+yield
+j start

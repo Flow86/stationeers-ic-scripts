@@ -1,0 +1,32 @@
+define cPressure 6000
+
+alias dVolumePumpO2 d0
+alias dPipeAnalyizerO2 d1
+alias dVolumePumpH2 d3
+alias dPipeAnalyizerH2 d4
+
+alias rPressureO2 r0
+alias rPressureH2 r1
+alias rStateO2 r2
+alias rStateH2 r3
+
+init:
+move rStateO2 0
+move rStateH2 0
+jal update_state
+
+start:
+l rPressureO2 dPipeAnalyizerO2 Pressure
+slt rStateO2 rPressureO2 cPressure
+
+l rPressureH2 dPipeAnalyizerH2 Pressure
+slt rStateH2 rPressureH2 cPressure
+
+jal update_state
+yield
+j start
+
+update_state:
+s dVolumePumpO2 On rStateO2
+s dVolumePumpH2 On rStateH2
+j ra

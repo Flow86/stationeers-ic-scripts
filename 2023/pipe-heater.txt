@@ -1,0 +1,30 @@
+# Heat a pipe to 0°C
+#
+
+define cHashLPH -287495560
+define cTemperature 273 # 0°C in K
+
+#alias dPipeHeater d0 
+alias dAnalyzer d1
+
+alias rPipeHeater r0
+alias rTemperature r1
+
+init:
+move rPipeHeater 0
+jal update_state
+
+start:
+l rTemperature dAnalyzer Temperature
+
+slt rPipeHeater rTemperature cTemperature
+
+jal update_state
+yield
+j start
+
+update_state:
+#s dPipeHeater On rPipeHeater
+sb cHashLPH On rPipeHeater
+s db Setting rPipeHeater
+j ra

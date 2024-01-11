@@ -1,0 +1,44 @@
+# Automatic Filtration
+# Chip for a Filtration Unit
+# Change line 20 if necessary
+# set a device in d0 for an "used up filter" alarm
+
+define cOnRatio 0.001
+
+alias dAlarm d0
+alias dFiltration db
+
+alias r0Ratio r0
+alias r1Slot1Occupied r1
+alias r2Slot2Occupied r2
+alias r3Alarm r3
+
+init:
+jal turn_off
+
+start:
+# see https://stationeers-wiki.com/Filtration
+l r0Ratio dFiltration RatioVolatilesInput
+bgtal r0Ratio cOnRatio turn_on
+bltal r0Ratio cOnRatio turn_off
+
+bdse dAlarm check_alarm
+
+yield
+j start
+
+turn_on:
+s dFiltration Mode 1
+j ra
+
+turn_off:
+s dFiltration Mode 0
+j ra
+
+check_alarm:
+ls r1Slot1Occupied dFiltration 0 Occupied
+ls r2Slot2Occupied dFiltration 1 Occupied
+
+nor r3Alarm r1Slot1Occupied r2Slot2Occupied
+s dAlarm On r3Alarm
+j ra

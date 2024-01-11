@@ -1,0 +1,60 @@
+# Counter Heat Exchanger
+# VentC -> AnalyzerC -> HE -> PumpC -> Vent
+# Hot   -> HE -> PumpH -> AnalyzerH -> Cold
+
+define cCoolantPressure 20000 # kPa
+define cMinPressure 1000      # kPa
+define cPumpCMode 1           # Right
+define cPumpHMode 1           # Right
+
+alias dVentC d0
+alias dAnalyzerC d1
+alias dPumpC d2
+
+alias dAnalyzerH d4
+alias dPumpH d5
+
+alias rVentCOnOff r0
+alias rPumpCOnOff r1
+alias rPumpHOnOff r2
+
+alias rPressureC r3
+alias rPressureH r4
+
+init:
+move rVentCOnOff 0
+move rPumpCOnOff 0
+move rPumpHOnOff 0
+jal update_state
+yield
+
+start:
+s dAnalyzerC On 1
+s dAnalyzerH On 1
+
+l rPressureC dAnalyzerC Pressure
+l rPressureH dAnalyzerH Pressure
+
+# wait for pressure in hot pipe
+blt rPressureH cMinPressure init
+
+
+# if coolant pressure too low, turn on vent
+slt rVentCOnOff rPressureC cCoolantPressure
+
+# turn on pumps
+move rPumpCOnOff 1
+move rPumpHOnOff 1
+
+jal update_state
+yield
+j start
+
+update_state:
+s db Setting rVentCOnOff
+s dVentC On rVentCOnOff
+s dPumpC On rPumpCOnOff
+s dPumpC Mode cPumpCMode
+s dPumpH On rPumpHOnOff
+s dPumpH Mode cPumpHMode
+j ra

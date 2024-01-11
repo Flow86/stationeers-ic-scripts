@@ -1,0 +1,40 @@
+alias d0AdvancedFurnace d0
+alias d1LeverOpenFurnace d1
+alias d2DialOutputFurnace d2
+alias d3DialInputFurnace d3
+
+alias r0OpenFurnace r0
+alias r1OutputVolume r1
+alias r2CurrentPressure r2
+alias r3MaxPressure r3
+alias r4InputVolume r4
+
+move r3MaxPressure 55000
+
+start:
+l r0OpenFurnace d1LeverOpenFurnace Setting
+l r4InputVolume d3DialInputFurnace Setting
+l r1OutputVolume d2DialOutputFurnace Setting
+l r2CurrentPressure d0AdvancedFurnace Pressure
+
+bgtal r2CurrentPressure r3MaxPressure overpressure
+
+mul r4InputVolume r4InputVolume 10
+mul r1OutputVolume r1OutputVolume 10
+
+s d0AdvancedFurnace Open r0OpenFurnace
+s d0AdvancedFurnace SettingInput r4InputVolume
+s d0AdvancedFurnace SettingOutput r1OutputVolume
+s db Setting r1OutputVolume
+
+div r4InputVolume r4InputVolume 10
+
+s d3DialInputFurnace Setting r4InputVolume
+
+yield
+j start
+
+overpressure:
+move r4InputVolume 0
+move r1OutputVolume 3
+j ra

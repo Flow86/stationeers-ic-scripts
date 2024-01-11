@@ -1,0 +1,42 @@
+alias d0Furnace d0
+alias d1ActivateButton d3
+alias d2FuelPump d1
+alias d3HotPump d2
+alias d4RefuelSwitch d4
+alias d5HotSwitch d5
+
+alias r0ActivateFurnace r0
+alias r1FuelPumpOn r1
+alias r2HotPumpOn r2
+alias r3CurrentPressure r3
+alias r4MaxFuelPressure r4
+
+init:
+move r4MaxFuelPressure 1500
+
+start:
+l r0ActivateFurnace d1ActivateButton Setting
+l r1FuelPumpOn d4RefuelSwitch Setting
+l r2HotPumpOn d5HotSwitch Setting
+l r3CurrentPressure d0Furnace Pressure
+
+# switch off fuel pump if hot pump is on too
+beqal r2HotPumpOn 1 pumpoff
+
+# switch off fuel pump if pressure is too high
+bgtal r3CurrentPressure r4MaxFuelPressure pumpoff
+
+s d0Furnace Activate r0ActivateFurnace
+s d2FuelPump On r1FuelPumpOn
+s d3HotPump On r2HotPumpOn
+s db Setting r1FuelPumpOn
+
+s d4RefuelSwitch Open r1FuelPumpOn
+s d5HotSwitch Open r2HotPumpOn
+
+yield
+j start
+
+pumpoff:
+move r1FuelPumpOn 0
+j ra
