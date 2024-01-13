@@ -1,0 +1,47 @@
+# Emergency Power
+# written by Flow86
+#
+# Chip to enable solid fuel generators
+# when battery level is low
+# You can let read a graph display the ic
+# to display the average charge percentage
+
+define cHashLargeBattery -1388288459
+define cHashSolidFuelGenerator 813146305
+
+# see Stationpedia
+define cMode_VeryLow 2
+define cMode_Medium 4
+
+alias rOnOff r0
+alias rAvgMode r1
+alias rAvgRatio r2
+
+init:
+move rOnOff 0
+jal update_state
+
+start:
+lb rAvgMode cHashLargeBattery Mode Average 
+lb rAvgRatio cHashLargeBattery Ratio Average 
+
+mul rAvgRatio rAvgRatio 100
+
+# if mode <= VeryLow step into 
+brgt rAvgMode cMode_VeryLow 2
+move rOnOff 1
+
+# if mode >= Medium step into 
+brlt rAvgMode cMode_Medium 2
+move rOnOff 0
+
+jal update_state
+yield
+j start
+
+update_state:
+s db Setting rAvgRatio
+
+sb cHashSolidFuelGenerator On rOnOff
+
+j ra
