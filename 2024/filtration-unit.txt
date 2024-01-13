@@ -2,48 +2,103 @@
 # written by Flow86
 #
 # Will reduce power usage
-# Optional alarm and pump slot
-# Change line 20 if necessary
+# Can detect Small or Heavy filters
+# No medium!
 
-define cOnRatio 0.1
+define cHashFilterPollutant 1915566057
+define cHashFilterPollutantH 1959564765
+define cHashFilterCarbonDioxide 1635000764
+define cHashFilterCarbonDioxideH 1876847024
+define cHashFilterNitrogen 632853248
+define cHashFilterNitrogenH -1387439451
+define cHashFilterOxygen -721824748
+define cHashFilterOxygenH -1217998945
+define cHashFilterVolatiles 15011598
+define cHashFilterVolatilesH 1255156286
+define cHashFilterNitrousOxide -1247674305
+define cHashFilterNitrousOxideH 465267979
 
-alias dVolumePump d0
-alias dAlarm d1
+define cMinRatio 0.001  # %
+define cMinPressure 100 # Pa
+
+alias dPump d0
 alias dFiltration db
 
-alias r0Ratio r0
-alias r1Slot1Occupied r1
-alias r2Slot2Occupied r2
-alias r3Alarm r3
+alias rPump r0
+alias rMode r1
+alias rPressureOutput r2
+alias rRatio r3
+alias rFilter0 r4
+alias rFilter1 r5
 
 init:
-jal turn_off
+move rPump 1
+move rMode 0
+jal update_state
 
 start:
-# see https://stationeers-wiki.com/Filtration
-l r0Ratio dFiltration RatioPollutantInput
-bgtal r0Ratio cOnRatio turn_on
-bltal r0Ratio cOnRatio turn_off
+l rPressureOutput dFiltration PressureOutput
+sgt rPump rPressureOutput cMinPressure
 
-bdse dAlarm check_alarm
+ls rFilter0 dFiltration 0 OccupantHash
+ls rFilter1 dFiltration 1 OccupantHash
 
+# check filter1 if filter0 was empty
+or rFilter0 rFilter0 rFilter1
+
+move rRatio 0
+
+# Pollutant
+brne rFilter0 cHashFilterPollutant 2
+l rRatio dFiltration RatioPollutantInput
+brne rFilter0 cHashFilterPollutantH 2
+l rRatio dFiltration RatioPollutantInput
+
+# CarbonDioxide
+brne rFilter0 cHashFilterCarbonDioxide 2
+l rRatio dFiltration RatioCarbonDioxideInput
+brne rFilter0 cHashFilterCarbonDioxideH 2
+l rRatio dFiltration RatioCarbonDioxideInput
+
+# Nitrogen
+brne rFilter0 cHashFilterNitrogen 2
+l rRatio dFiltration RatioNitrogenInput
+brne rFilter0 cHashFilterNitrogenH 2
+l rRatio dFiltration RatioNitrogenInput
+
+# Oxygen
+brne rFilter0 cHashFilterOxygen 2
+l rRatio dFiltration RatioOxygenInput
+brne rFilter0 cHashFilterOxygenH 2
+l rRatio dFiltration RatioOxygenInput
+
+# Volatiles
+brne rFilter0 cHashFilterVolatiles 2
+l rRatio dFiltration RatioVolatilesInput
+brne rFilter0 cHashFilterVolatilesH 2
+l rRatio dFiltration RatioVolatilesInput
+
+# NitrousOxide
+brne rFilter0 cHashFilterNitrousOxide 2
+l rRatio dFiltration RatioNitrousOxideInput
+brne rFilter0 cHashFilterNitrousOxideH 2
+l rRatio dFiltration RatioNitrousOxideInput
+
+# if ratio >= set step into
+brlt rRatio cMinRatio 2
+move rMode 1
+
+# if ratio < set step into
+brge rRatio cMinRatio 2
+move rMode 0
+
+jal update_state
 yield
 j start
 
-turn_on:
-s dFiltration Mode 1
-s dVolumePump On 1
-j ra
+update_state:
+brdns dPump 2
+s dPump On rPump
 
-turn_off:
-s dFiltration Mode 0
-s dVolumePump On 0
-j ra
-
-check_alarm:
-ls r1Slot1Occupied dFiltration 0 Occupied
-ls r2Slot2Occupied dFiltration 1 Occupied
-
-nor r3Alarm r1Slot1Occupied r2Slot2Occupied
-s dAlarm On r3Alarm
+s dFiltration Mode rMode
 j ra
