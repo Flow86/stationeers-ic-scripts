@@ -1,0 +1,42 @@
+# Automatic AC
+# written by Flow86
+#
+# Chip for a AC Unit
+# Enables the AC when over temperature
+# disables it on target temperature
+# saves a lot of power
+
+define cHysteresis 0.5 # K
+
+alias dAC db
+
+alias rMode r0
+alias rTemperature r1
+alias rSetTemperature r2
+alias rMaxTemperature r3
+
+init:
+move rMode 0
+jal update_state
+
+start:
+l rSetTemperature dAC Setting
+add rMaxTemperature rSetTemperature cHysteresis
+
+l rTemperature dAC TemperatureInput
+
+# if temp > set+hyst step into
+brle rTemperature rMaxTemperature 2
+move rMode 1
+
+# if temp < set step into
+brge rTemperature rSetTemperature 2
+move rMode 0
+
+jal update_state
+yield
+j start
+
+update_state:
+s dAC Mode rMode
+j ra
