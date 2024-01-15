@@ -1,14 +1,15 @@
 # Controller for filling a coolant tank
 # with outside atmosphere
 # GasSensor for outside Temp
-# Dial for Tank Pressure
+# Dial for Target Temperature
 # Vent -> Tank              -> HE
 #            ^ <- Pump (On) <- |
 # Passive Vent <- Pump (d4) <- |
 #
 
-define cMaxTemperature 293 # 20C in K
-define cMaxPressure 50     # MPa
+define cMaxTemperature 60  # °C
+define cTankPressure 20    # MPa
+define cOverTemperature 10 # K
 define cOverPressure 2000  # Pa
 define cMinTempOut 253     # -20C in K
 
@@ -21,44 +22,55 @@ alias dPumpToOutside d4
 alias dDiode d5
 
 alias rVent r0
-alias rPumpToOutside r2
+alias rPumpToOutside r1
 
 alias rOutsideTemp r3
 alias rTankTemp r4
 alias rTankPressure r5
 alias rSetPressure r6
+alias rSetTemperature r7
 
-alias rOutTempHigh r7
-alias rTankPressureLow r8
-alias rTankPressureHigh r9
+alias rOutTempHigh r8
+alias rTankPressureLow r9
+alias rTankPressureHigh r10
+alias rTankTemperatureHigh r11
 
 init:
 move rVent 0
 move rPumpToOutside 0
-s dDial Mode cMaxPressure
 jal update_state
+
+s dDial Mode cMaxTemperature
 
 start:
 l rOutsideTemp dGasSensor Temperature
 l rTankPressure dTank Pressure
 l rTankTemp dTank Temperature
-l rSetPressure dDial Setting
-mul rSetPressure rSetPressure 1000
+l rSetTemperature dDial Setting
+add rSetTemperature rSetTemperature 273
 
+# outside temperature high enough?
 sgt rOutTempHigh rOutsideTemp cMinTempOut
 
+# tank temperature too high?
+sgt rTankTemperatureHigh rTankTemp rSetTemperature
+# outside is good as long as tank temp is high enough
+or rOutTempHigh rOutTempHigh rTankTemperatureHigh
+
+# tank pressure too low?
+mul rSetPressure cTankPressure 1000
 slt rTankPressureLow rTankPressure rSetPressure
 
-# release some gas to the outside if temp too high
-sgt rPumpToOutside rTankTemp cMaxTemperature
-# or if tank pressure is too high
+# tank pressure too high?
 add rSetPressure rSetPressure cOverPressure
 sgt rTankPressureHigh rTankPressure rSetPressure
-or rPumpToOutside rPumpToOutside rTankPressureHigh
 
-# outside is good as long as tank temp is high enough
-brne rPumpToOutside 1 2
-move rOutTempHigh 1
+# tank temperature too high? release some gas
+add rSetTemperature rSetTemperature cOverTemperature
+sgt rPumpToOutside rTankTemp rSetTemperature
+
+# or if we are over pressuring the tank
+or rPumpToOutside rPumpToOutside rTankPressureHigh
 
 # enable vent if outside temperature is high enough
 # and tank pressure too low
