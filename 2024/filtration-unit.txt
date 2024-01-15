@@ -21,7 +21,8 @@ define cHashFilterNitrousOxideH 465267979
 define cMinRatio 0.001  # %
 define cMinPressure 100 # Pa
 
-alias dPump d0
+alias dPump1 d0
+alias dPump2 d1
 alias dFiltration db
 
 alias rPump r0
@@ -97,8 +98,10 @@ yield
 j start
 
 update_state:
-brdns dPump 2
-s dPump On rPump
+brdns dPump1 2
+s dPump1 On rPump
+brdns dPump2 2
+s dPump2 On rPump
 
 s dFiltration Mode rMode
 j ra

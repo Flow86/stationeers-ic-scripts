@@ -1,0 +1,97 @@
+# Helper script for filtration unit loop
+# to get the pressure differential right
+# pump1 -> pressurize pipe -> filtration units
+# filtration units -> pump2 -> empty pipe
+
+define cDefaultPressure 40 # MPa
+define cHysteresis1 10000  # kPa
+define cHysteresis2 100    # kPa
+define cMaxPressure 55     # MPa
+define cMaxTemperature 353 # 80°C in K
+
+alias dPump1 d0     # To Filter
+alias dAnalyzer1 d1
+alias dDial1 d2     # Pressure
+
+alias dPump2 d3     # From Filter
+alias dAnalyzer2 d4
+alias dDial2 d5
+
+alias rPump1 r0
+alias rPump2 r1
+alias rPressure1 r2
+alias rPressure2 r3
+alias rMaxPressure1 r4
+alias rMinPressure2 r5
+alias rTemperature1 r6
+alias rIsTemperatureLowEnough r7
+
+init:
+move rPump1 0
+move rPump2 0
+jal update_state
+
+s dDial1 Mode cMaxPressure
+s dDial2 Mode cMaxPressure
+#s dDial1 Setting cDefaultPressure
+
+start:
+
+# First pump is the one filling the input pipe
+check_pump1:
+bdns dPump1 check_pump2
+s dAnalyzer1 On 1
+l rPressure1 dAnalyzer1 Pressure
+l rTemperature1 dAnalyzer1 Temperature
+slt rIsTemperatureLowEnough rTemperature1 cMaxTemperature
+
+l rMaxPressure1 dDial1 Setting
+mul rMaxPressure1 rMaxPressure1 1000
+
+# if pressure < max-set step into
+sub rMaxPressure1 rMaxPressure1 cHysteresis1
+brge rPressure1 rMaxPressure1 2
+move rPump1 1
+
+# gate for temperature
+and rPump1 rPump1 rIsTemperatureLowEnough
+
+# if pressure >= max step into
+add rMaxPressure1 rMaxPressure1 cHysteresis1
+brlt rPressure1 rMaxPressure1 2
+move rPump1 0
+
+# Second pump is the one emptying the waste pipe
+check_pump2:
+bdns dPump2 end
+
+s dAnalyzer2 On 1
+l rPressure2 dAnalyzer2 Pressure
+
+move rMinPressure2 100 # Pa
+l rMinPressure2 dDial2 Setting
+mul rMinPressure2 rMinPressure2 1000
+
+# if pressure > min+set enable pump
+add rMinPressure2 rMinPressure2 cHysteresis2
+brlt rPressure2 rMinPressure2 2
+move rPump2 1
+
+# if pressure <= min disable pump
+sub rMinPressure2 rMinPressure2 cHysteresis2
+brge rPressure2 rMinPressure2 2
+move rPump2 0
+
+end:
+jal update_state
+yield
+j start
+
+update_state:
+
+brdns dPump1 2
+s dPump1 On rPump1
+
+brdns dPump2 2
+s dPump2 On rPump2
+j ra

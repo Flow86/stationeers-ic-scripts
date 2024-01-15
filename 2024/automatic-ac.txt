@@ -29,8 +29,8 @@ l rTemperature dAC TemperatureInput
 brle rTemperature rMaxTemperature 2
 move rMode 1
 
-# if temp < set step into
-brge rTemperature rSetTemperature 2
+# if temp <= set step into
+brgt rTemperature rSetTemperature 2
 move rMode 0
 
 jal update_state
