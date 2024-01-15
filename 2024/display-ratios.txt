@@ -1,0 +1,51 @@
+# Display gas ratios on devices
+# written by Flow86
+
+alias dGasSensor d0
+alias dDisplayOxygen d1
+alias dDisplayNitrogen d2
+
+alias dDisplayCarbonDioxide d3
+alias dDisplayPollutant d4
+alias dDisplayOther d5
+
+alias rRatioOxygen r0
+alias rRatioNitrogen r1
+alias rRatioCarbonDioxide r2
+alias rRatioPollutant r3
+alias rRatioOther r4
+
+start:
+l rRatioOxygen dGasSensor RatioOxygen
+l rRatioNitrogen dGasSensor RatioNitrogen
+l rRatioCarbonDioxide dGasSensor RatioCarbonDioxide
+l rRatioPollutant dGasSensor RatioPollutant
+
+move rRatioOther 1
+sub rRatioOther rRatioOther rRatioOxygen
+sub rRatioOther rRatioOther rRatioNitrogen
+sub rRatioOther rRatioOther rRatioCarbonDioxide
+sub rRatioOther rRatioOther rRatioPollutant
+
+brdns dDisplayOxygen 3
+s dDisplayOxygen Mode 1
+s dDisplayOxygen Setting rRatioOxygen
+
+brdns dDisplayNitrogen 3
+s dDisplayNitrogen Mode 1
+s dDisplayNitrogen Setting rRatioNitrogen
+
+brdns dDisplayCarbonDioxide 3
+s dDisplayCarbonDioxide Mode 1
+s dDisplayCarbonDioxide Setting rRatioCarbonDioxide
+
+brdns dDisplayPollutant 3
+s dDisplayPollutant Mode 1
+s dDisplayPollutant Setting rRatioPollutant
+
+brdns dDisplayOther 3
+s dDisplayOther Mode 1
+s dDisplayOther Setting rRatioOther
+
+yield
+j start

@@ -65,8 +65,11 @@ slt rTankPressureLow rTankPressure rSetPressure
 add rSetPressure rSetPressure cOverPressure
 sgt rTankPressureHigh rTankPressure rSetPressure
 
-# tank temperature too high? release some gas
+# only add over temperature if tank not full enough
+brne rTankPressureLow 1 2
 add rSetTemperature rSetTemperature cOverTemperature
+
+# tank temperature too high? release some gas
 sgt rPumpToOutside rTankTemp rSetTemperature
 
 # or if we are over pressuring the tank

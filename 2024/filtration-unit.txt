@@ -25,21 +25,25 @@ alias dPump1 d0
 alias dPump2 d1
 alias dFiltration db
 
-alias rPump r0
-alias rMode r1
-alias rPressureOutput r2
-alias rRatio r3
-alias rFilter0 r4
-alias rFilter1 r5
+alias rPump1 r0
+alias rPump2 r1
+alias rMode r2
+alias rPressureOutput r3
+alias rRatio r4
+alias rFilter0 r5
+alias rFilter1 r6
 
 init:
-move rPump 1
+move rPump1 1
+move rPump2 1
 move rMode 0
 jal update_state
 
 start:
 l rPressureOutput dFiltration PressureOutput
-sgt rPump rPressureOutput cMinPressure
+sgt rPump1 rPressureOutput cMinPressure
+l rPressureOutput dFiltration PressureOutput2
+sgtz rPump2 rPressureOutput
 
 ls rFilter0 dFiltration 0 OccupantHash
 ls rFilter1 dFiltration 1 OccupantHash
@@ -99,9 +103,9 @@ j start
 
 update_state:
 brdns dPump1 2
-s dPump1 On rPump
+s dPump1 On rPump1
 brdns dPump2 2
-s dPump2 On rPump
+s dPump2 On rPump2
 
 s dFiltration Mode rMode
 j ra
