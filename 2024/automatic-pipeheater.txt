@@ -1,0 +1,64 @@
+# Automatic Pipe Heater
+# written by Flow86
+#
+# * Use the Dial to set the temperature
+# * has a hysteresis
+
+# if temp < curtemp-hyst -> heating start
+# if temp >= curtemp     -> heating stop
+
+define cHashPipeHeater -419758574
+define cHashLiquidPipeHeater -287495560
+
+define cMaxTemperature 40         # °C
+define cDefaultTemperature 21     # °C
+define cHysteresisTemperature 0.5 # K
+
+alias dSensor d0
+alias dDialTemperature d1
+
+alias rHeater r0
+alias rSetTemperature r1
+alias rTemperature r2
+
+alias rTempHigher r3
+alias rTempLower r4
+
+init:
+move rHeater 0
+
+s dDialTemperature Mode cMaxTemperature
+#s dDialTemperature Setting cDefaultTemperature
+
+jal update_state
+
+start:
+l rSetTemperature dDialTemperature Setting
+add rSetTemperature rSetTemperature 273
+
+l rTemperature dSensor Temperature
+
+sge rTempHigher rTemperature rSetTemperature
+
+sub rSetTemperature rSetTemperature cHysteresisTemperature
+slt rTempLower rTemperature rSetTemperature
+
+# if temp >= set step into
+breqz rTempHigher 2
+move rHeater 0
+
+# if temp < set-hyst step into
+breqz rTempLower 2
+move rHeater 1
+
+
+jal update_state
+yield
+j start
+
+update_state:
+sb cHashPipeHeater On rHeater
+sb cHashLiquidPipeHeater On rHeater
+
+s db Setting rHeater
+j ra

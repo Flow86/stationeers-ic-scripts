@@ -7,34 +7,59 @@
 # to display the average charge percentage
 
 define cHashLargeBattery -1388288459
+define cHashStationBattery -400115994
 define cHashSolidFuelGenerator 813146305
+define cHashTransformer -1423212473
+define cHashLED 1944485013
 
 # see Stationpedia
 define cMode_VeryLow 2
+define cMode_Low 3
 define cMode_Medium 4
+
+define cColor_Grey 1
+define cColor_Green 2
+define cColor_Orange 3
+define cColor_Red 4
 
 alias rOnOff r0
 alias rAvgMode r1
 alias rAvgRatio r2
+alias rColor r3
 
 init:
 move rOnOff 0
 jal update_state
 
 start:
-lb rAvgMode cHashLargeBattery Mode Average 
-lb rAvgRatio cHashLargeBattery Ratio Average 
+lb rAvgMode cHashLargeBattery Mode Average
+lb rAvgRatio cHashLargeBattery Ratio Average
+# or
+#lb rAvgMode cHashStationBattery Mode Average
+#lb rAvgRatio cHashStationBattery Ratio Average
 
 mul rAvgRatio rAvgRatio 100
 
-# if mode <= VeryLow step into 
+# if mode <= VeryLow step into
 brgt rAvgMode cMode_VeryLow 2
 move rOnOff 1
 
-# if mode >= Medium step into 
+# if mode >= Medium step into
 brlt rAvgMode cMode_Medium 2
 move rOnOff 0
 
+move rColor cColor_Green
+bge rAvgMode cMode_Medium end
+
+move rColor cColor_Orange
+bge rAvgMode cMode_Low end
+
+move rColor cColor_Red
+bge rAvgMode cMode_VeryLow end
+
+move rColor cColor_Grey
+
+end:
 jal update_state
 yield
 j start
@@ -43,5 +68,10 @@ update_state:
 s db Setting rAvgRatio
 
 sb cHashSolidFuelGenerator On rOnOff
+sb cHashTransformer On rOnOff
+sb cHashTransformer Setting 49990
+
+sb cHashLED On rOnOff
+sb cHashLED Color rColor
 
 j ra

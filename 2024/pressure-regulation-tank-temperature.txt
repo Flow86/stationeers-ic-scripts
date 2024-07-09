@@ -1,0 +1,62 @@
+# Chip for Pressure Regulation/Temperature
+# written by Flow86
+#
+# Set Tanks and Pressure Regulator (up to 3 pairs)
+# if temperature of tank is too high, pressure regulator will turn off
+
+define cMaxTemperature1 22  # °C
+define cMaxTemperature2 32  # °C
+define cMaxTemperature3 42  # °C
+
+alias dPump1 d0
+alias dPump2 d1
+alias dPump3 d2
+
+alias dTank1 d3
+alias dTank2 d4
+alias dTank3 d5
+
+alias rPump1 r0
+alias rPump2 r1
+alias rPump3 r2
+
+alias rSetTemperature1 r3
+alias rSetTemperature2 r4
+alias rSetTemperature3 r5
+alias rTemperature r6
+
+init:
+move rPump1 0
+move rPump2 0
+move rPump3 0
+jal update_state
+
+start:
+add rSetTemperature1 cMaxTemperature1 273 # °C to K
+add rSetTemperature2 cMaxTemperature2 273 # °C to K
+add rSetTemperature3 cMaxTemperature3 273 # °C to K
+
+brdns dTank1 3
+l rTemperature dTank1 Temperature
+sle rPump1 rTemperature rSetTemperature1
+
+brdns dTank2 3
+l rTemperature dTank2 Temperature
+sle rPump2 rTemperature rSetTemperature2
+
+brdns dTank3 3
+l rTemperature dTank3 Temperature
+sle rPump3 rTemperature rSetTemperature3
+
+jal update_state
+yield
+j start
+
+update_state:
+brdns dPump1 2
+s dPump1 On rPump1
+brdns dPump2 2
+s dPump2 On rPump2
+brdns dPump3 2
+s dPump3 On rPump3
+j ra

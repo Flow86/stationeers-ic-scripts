@@ -54,7 +54,7 @@ brge rPressure1 rMaxPressure1 2
 move rPump1 1
 
 # gate for temperature
-and rPump1 rPump1 rIsTemperatureLowEnough
+#and rPump1 rPump1 rIsTemperatureLowEnough
 
 # if pressure >= max step into
 add rMaxPressure1 rMaxPressure1 cHysteresis1

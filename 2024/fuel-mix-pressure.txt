@@ -1,0 +1,34 @@
+# Fuel Mix Pressure Shutoff
+# written by Flow86
+
+define cPressure 1 # MPa
+
+alias dPump d0
+alias dAnalyzer d1
+
+alias rPump r0
+
+alias rPressure r1
+alias rMaxPressure r2
+
+init:
+move rPump 0
+
+mul rMaxPressure cPressure 1000
+
+jal update_state
+
+start:
+s dAnalyzer On 1
+l rPressure dAnalyzer Pressure
+
+# enable pump if pressure < max
+slt rPump rPressure rMaxPressure
+
+jal update_state
+yield
+j start
+
+update_state:
+s dPump On rPump
+j ra

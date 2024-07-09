@@ -11,7 +11,7 @@ define cMinRatioN  0.10    # %
 define cMinRatioCO2 0.10   # %
 define cMaxPressure 101    # kPa
 define cDefaultPressure 75 # kPa
-define cOverPressure 10    # kPa over selection
+define cOverPressure 1     # kPa over selection
 
 alias dAnalyzer d0
 alias dPumpOverPressure d1
@@ -34,10 +34,14 @@ alias rSetPressure r9
 alias rMaxPressure r10
 
 init:
+move rSetPressure cDefaultPressure
 move rPumpOverPressure 0
 move rPumpO2 0
 move rPumpN 0
 move rPumpCO2 0
+
+brdns dDialPressure 3
+s dDialPressure Setting cDefaultPressure
 s dDialPressure Mode cMaxPressure
 jal update_state
 
@@ -48,7 +52,9 @@ l rRatioN dAnalyzer RatioNitrogen
 l rRatioCO2 dAnalyzer RatioCarbonDioxide
 l rPressure dAnalyzer Pressure
 
+brdns dDialPressure 2
 l rSetPressure dDialPressure Setting
+
 slt rOnOffPressure rPressure rSetPressure
 add rMaxPressure rSetPressure cOverPressure
 
@@ -62,8 +68,8 @@ slt rPumpCO2 rRatioCO2 cMinRatioCO2
 
 #or rPumpO2 rOnOffPressure rPumpO2
 # fill room with nitrogen
-or rPumpN rOnOffPressure rPumpN
-#or rPumpCO2 rOnOffPressure rPumpCO2
+#or rPumpN rOnOffPressure rPumpN
+or rPumpCO2 rOnOffPressure rPumpCO2
 
 jal update_state
 yield

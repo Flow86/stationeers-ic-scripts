@@ -1,0 +1,49 @@
+# Chip for an Filtration Unit with two Pumps
+# written by Flow86
+
+define cMaxInputPressure 45000 # Pa
+define cMaxOutputPressure 30000 # Pa
+
+alias dPump1 d0
+alias dPump2 d1
+alias dFiltration db
+
+alias rPump1 r0
+alias rPump2 r1
+alias rMode r2
+alias rPressureInput r3
+alias rPressureOutput r4
+alias rPressureOutput2 r5
+
+init:
+move rPump1 0
+move rPump2 1
+move rMode 0
+jal update_state
+
+start:
+l rPressureInput dFiltration PressureInput
+sle rPump1 rPressureInput cMaxInputPressure
+
+l rPressureOutput dFiltration PressureOutput
+sgtz rPump2 rPressureOutput
+
+move rMode 0
+l rPressureOutput2 dFiltration PressureOutput2
+# if pressure >= max, jump over
+brge rPressureOutput cMaxOutputPressure 3
+brge rPressureOutput2 cMaxOutputPressure 2
+move rMode 1
+
+jal update_state
+yield
+j start
+
+update_state:
+brdns dPump1 2
+s dPump1 On rPump1
+brdns dPump2 2
+s dPump2 On rPump2
+
+s dFiltration Mode rMode
+j ra

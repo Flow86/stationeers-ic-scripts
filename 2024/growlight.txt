@@ -6,11 +6,13 @@
 #     Grow_light_automation
 
 define hashGrowLight -1758710260
+define hashHydroponicStation 1441767298
 
 define cDayLength 20 # min
 define cDayTime 12.5 # min (on-time)
 
 alias dDaylightSensor d0
+alias dLight d1
 
 alias rDayTime r1
 alias rSolarAngle r2
@@ -29,10 +31,15 @@ div rDayTime rDayTime 2
 s db Setting rDayTime
 
 start:
-l rSolarAngle dDaylightSensor rSolarAngle
+l rSolarAngle dDaylightSensor SolarAngle
 
 sle rGrowlightOnOff rSolarAngle rDayTime
+
 sb hashGrowLight On rGrowlightOnOff
+sb hashHydroponicStation On rGrowlightOnOff
+
+brdns dLight 2
+s dLight On rGrowlightOnOff
 
 yield
 j start

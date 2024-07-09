@@ -1,0 +1,17 @@
+# Radiator Sun Tracker
+
+define cHashSensor 1076425094 # Daylight Sensor
+define cHashLargeRadiator -566775170
+
+define cCorrectionFactor -90
+
+alias rHorizontal r0
+
+start:
+lb rHorizontal cHashSensor Horizontal Average
+add rHorizontal rHorizontal cCorrectionFactor
+
+sb cHashLargeRadiator Horizontal rHorizontal
+
+yield
+j start

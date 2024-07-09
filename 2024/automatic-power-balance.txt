@@ -1,0 +1,52 @@
+# Power Balance
+# written by Flow86
+#
+# Chip to have one emergency power battery
+# switched by 2 large transformers
+#
+# IC Power Balance -> Transformers -> Batteries
+# emergency power  ->
+
+define cHashLargeBattery -1388288459
+define cHashStationBattery -400115994
+define cHashLargeTransformer -1423212473
+
+# see Stationpedia
+define cMode_VeryLow 2
+define cMode_Medium 4
+
+alias rOnOff r0
+alias rAvgMode r1
+alias rAvgRatio r2
+
+init:
+move rOnOff 0
+jal update_state
+
+start:
+# lb rAvgMode cHashLargeBattery Mode Average 
+# lb rAvgRatio cHashLargeBattery Ratio Average 
+# or
+lb rAvgMode cHashStationBattery Mode Average 
+lb rAvgRatio cHashStationBattery Ratio Average 
+
+mul rAvgRatio rAvgRatio 100
+
+# if mode <= VeryLow step into 
+brgt rAvgMode cMode_VeryLow 2
+move rOnOff 1
+
+# if mode >= Medium step into 
+brlt rAvgMode cMode_Medium 2
+move rOnOff 0
+
+jal update_state
+yield
+j start
+
+update_state:
+s db Setting rAvgRatio
+
+sb cHashLargeTransformer On rOnOff
+
+j ra

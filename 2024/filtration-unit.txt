@@ -17,6 +17,8 @@ define cHashFilterVolatiles 15011598
 define cHashFilterVolatilesH 1255156286
 define cHashFilterNitrousOxide -1247674305
 define cHashFilterNitrousOxideH 465267979
+define cHashFilterWater -1993197973
+define cHashFilterWaterH 2004969680
 
 define cMinRatio 0.001  # %
 define cMinPressure 100 # Pa
@@ -88,6 +90,12 @@ brne rFilter0 cHashFilterNitrousOxide 2
 l rRatio dFiltration RatioNitrousOxideInput
 brne rFilter0 cHashFilterNitrousOxideH 2
 l rRatio dFiltration RatioNitrousOxideInput
+
+# Water
+brne rFilter0 cHashFilterWater 2
+l rRatio dFiltration RatioSteamInput
+brne rFilter0 cHashFilterWaterH 2
+l rRatio dFiltration RatioSteamInput
 
 # if ratio >= set step into
 brlt rRatio cMinRatio 2

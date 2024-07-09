@@ -1,28 +1,39 @@
-# Automatic Room Temperature Control (Cooling)
+# Automatic Room Temperature Control (Cooling&Heating)
 # written by Flow86
 #
 # * Use the Dial to set the temperature
-# * No heating, only cooling
 # * has a hysteresis
+
+# if temp > curtemp+chyst -> cooling start
+# if temp < curtemp-chyst -> cooling stop
+# if temp < curtemp-lowtemp -> heating start
+# if temp >= curtemp-chyst -> heating stop
 
 define cHashWallCooler -739292323
 define cHashLiquidWallCooler -1369060582
 
-define cMaxTemperature 30         # °C
+define cHashWallHeater 24258244
+
+define cMaxTemperature 40         # °C
 define cDefaultTemperature 21     # °C
 define cHysteresisTemperature 0.5 # K
+define cLowTemperatureHeating 3   # K
 
 alias dGasSensor d0
 alias dDialTemperature d1
 
 alias rWallCooler r0
-alias rSetTemperature r1
-alias rTemperature r2
-alias rTempHigher r3
-alias rTempLower r4
+alias rWallHeater r1
+alias rSetTemperature r2
+alias rTemperature r3
+
+alias rTempHigher r4
+alias rTempLower r5
+alias rCoolingTemp r6
 
 init:
 move rWallCooler 0
+move rWallHeater 0
 
 s dDialTemperature Mode cMaxTemperature
 #s dDialTemperature Setting cDefaultTemperature
@@ -50,6 +61,21 @@ move rWallCooler 1
 breqz rTempLower 2
 move rWallCooler 0
 
+add rSetTemperature rSetTemperature cHysteresisTemperature
+sge rTempHigher rTemperature rSetTemperature
+
+sub rSetTemperature rSetTemperature cLowTemperatureHeating
+slt rTempLower rTemperature rSetTemperature
+
+# if temp >= set step into
+breqz rTempHigher 2
+move rWallHeater 0
+
+# if temp < set-low step into
+breqz rTempLower 2
+move rWallHeater 1
+
+
 jal update_state
 yield
 j start
@@ -57,5 +83,8 @@ j start
 update_state:
 sb cHashWallCooler On rWallCooler
 sb cHashLiquidWallCooler On rWallCooler
+
+sb cHashWallHeater On rWallHeater
+
 s db Setting rWallCooler
 j ra

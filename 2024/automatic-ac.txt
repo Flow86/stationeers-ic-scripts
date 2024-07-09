@@ -6,32 +6,45 @@
 # disables it on target temperature
 # saves a lot of power
 
-define cHysteresis 0.5 # K
+define cHysteresisTemperature 0.5 # K
 
+alias dPump1 d0
 alias dAC db
 
 alias rMode r0
-alias rTemperature r1
+alias rPump1 r1
 alias rSetTemperature r2
-alias rMaxTemperature r3
+alias rTemperature r3
+alias rTempHigher r4
+alias rTempLower r5
 
 init:
-move rMode 0
+move rMode 1
+move rPump1 0
 jal update_state
 
 start:
 l rSetTemperature dAC Setting
-add rMaxTemperature rSetTemperature cHysteresis
 
 l rTemperature dAC TemperatureInput
 
-# if temp > set+hyst step into
-brle rTemperature rMaxTemperature 2
-move rMode 1
+add rSetTemperature rSetTemperature cHysteresisTemperature
+add rSetTemperature rSetTemperature cHysteresisTemperature
+add rSetTemperature rSetTemperature cHysteresisTemperature
+sgt rTempHigher rTemperature rSetTemperature
 
-# if temp <= set step into
-brgt rTemperature rSetTemperature 2
+sub rSetTemperature rSetTemperature cHysteresisTemperature
+sle rTempLower rTemperature rSetTemperature
+
+# if temp > set+hyst step into
+breqz rTempHigher 3
+move rMode 1
+move rPump1 0
+
+# if temp < set step into
+breqz rTempLower 3
 move rMode 0
+move rPump1 1
 
 jal update_state
 yield
@@ -39,4 +52,6 @@ j start
 
 update_state:
 s dAC Mode rMode
+brdns dPump1 2
+s dPump1 On rPump1
 j ra
