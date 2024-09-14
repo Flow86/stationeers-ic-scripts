@@ -1,0 +1,34 @@
+# Controller for a Cooling Loop with a Counterflow HE
+# written by Flow86
+#
+#
+
+alias dAnalyzerInside d0
+alias dAnalyzerOutside d3
+alias dPumpOutsideIn d4
+
+alias rPump r0
+alias rTemperatureInside r1
+alias rTemperatureOutside r2
+
+init:
+move rPump 0
+
+jal update_state
+
+start:
+yield
+
+l rTemperatureInside dAnalyzerInside Temperature
+l rTemperatureOutside dAnalyzerOutside Temperature
+
+sle rPump rTemperatureOutside rTemperatureInside
+
+jal update_state
+j start
+
+update_state:
+s dPumpOutsideIn On rPump
+s db Setting rPump
+
+j ra

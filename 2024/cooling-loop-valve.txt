@@ -1,0 +1,67 @@
+# Controller for a Cooling Loop
+# toggling all valves to the Outside
+# written by Flow86
+#
+#
+
+define hashDigitalValve -1280984102
+define cMaxPressure 5000 # kPa
+define cTargetTemperature 500 # K = 226°C 
+
+alias dAnalyzerInside d0
+alias dLED d1
+alias dPumpIn d2
+alias dAnalyzerOutside d3
+alias dPumpOut d4
+
+alias rValve r0
+alias rLED r1
+alias rPumpIn r2
+alias rPumpOut r3
+alias rTemperatureInside r4
+alias rPressureInside r5
+alias rTemperatureOutside r6
+
+init:
+move rValve 0
+move rPumpIn 0
+move rPumpOut 0
+
+jal update_state
+
+start:
+yield
+
+l rTemperatureInside dAnalyzerInside Temperature
+l rPressureInside dAnalyzerInside Pressure
+
+l rTemperatureOutside dAnalyzerOutside Temperature
+
+# enable input pump if pressure is low enough
+sle rPumpIn rPressureInside cMaxPressure
+
+# enable outgoing pump if temperature is low enough
+sle rPumpOut rTemperatureInside cTargetTemperature
+
+# enable heat exchanger valves if inside temperature < outside temperature
+sle rValve rTemperatureOutside rTemperatureInside
+
+jal update_state
+j start
+
+update_state:
+sb hashDigitalValve On rValve
+s db Setting rValve
+
+brdns dPumpIn 2
+s dPumpIn On rPumpIn
+
+brdns dPumpOut 2
+s dPumpOut On rPumpOut
+
+# green or red led 
+brdns dLED 3
+select rLED rValve 2 4
+s dLED Color rLED
+
+j ra

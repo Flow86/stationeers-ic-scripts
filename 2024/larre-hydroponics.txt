@@ -1,0 +1,111 @@
+# LArRE Hydroponics Script
+# written by Flow86
+#
+# Its not very optimized, but it works (tm)
+#
+# Make sure the station numbers are correct
+#
+
+define stationDropOff 0
+define stationPickup 2
+define stationPotStart 3
+define stationPotEnd 16
+
+define hashImportBin -850484480
+define hashExportBin 1957571043
+
+define slotArm 0
+define slotProxyPlant 255
+
+alias dLarre d0
+
+alias rMoveTo r0
+alias rOccupied r1
+alias rMature r2
+alias rSeeding r3
+alias rMatureOrSeeding r4
+alias rIdle r15
+
+init:
+sb hashExportBin On 1
+sb hashImportBin On 1
+move rMoveTo stationPotStart
+jal moveto
+
+start:
+yield
+
+# if no plant, plant
+ls rOccupied dLarre slotProxyPlant Occupied
+beqz rOccupied plant
+
+checkpot:
+ls rMature dLarre slotProxyPlant Mature
+ls rSeeding dLarre slotProxyPlant Seeding
+add rMatureOrSeeding rMature rSeeding
+bgtz rMatureOrSeeding harvest
+
+nextpot:
+# check if we need to dropoff first
+ls rOccupied dLarre slotArm Occupied
+bnez rOccupied dropoff
+
+# move to next pot
+add rMoveTo rMoveTo 1
+# if rMoveTo > stationPotEnd start at beginning
+brle rMoveTo stationPotEnd 2
+move rMoveTo stationPotStart
+jal moveto
+
+j start
+
+moveto: # move to specified station
+s dLarre Setting rMoveTo
+s db Setting rMoveTo
+push ra
+jal waitidle # wait until moved
+pop ra
+j ra
+
+plant: # plant a plant
+push rMoveTo
+move rMoveTo stationPickup
+jal moveto # move to pickup
+
+s dLarre Activate 1
+jal waitidle
+
+pop rMoveTo
+jal moveto # move to pot
+
+s dLarre Activate 1 # plant
+jal waitidle
+
+j checkpot # check pot again
+
+harvest: # harvest a plant
+s dLarre Activate 1
+jal waitidle
+sleep 0.5
+
+j checkpot # check pot again
+
+dropoff:
+push rMoveTo
+move rMoveTo stationDropOff
+jal moveto # move to dropoff
+
+# todo while not empty
+s dLarre Activate 1
+jal waitidle
+sb hashImportBin Open 0
+
+pop rMoveTo
+jal moveto # move back
+j nextpot
+
+waitidle:
+yield
+l rIdle dLarre Idle
+beqz rIdle waitidle
+j ra

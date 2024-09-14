@@ -1,0 +1,35 @@
+# Chip for a Filtration Unit
+# written by Flow86
+#
+# Checks if outputs pressure has a certain limit and shuts off otherwise
+
+define cMaxPressure 3000 # kPa
+alias dFiltration db
+
+alias rPressureOutput r0
+alias rPressureOutput2 r1
+alias rMode r14
+alias rMode2 r15
+
+
+init:
+move rMode 0
+jal update_state
+
+start:
+yield
+
+l rPressureOutput dFiltration PressureOutput
+sle rMode rPressureOutput cMaxPressure
+l rPressureOutput2 dFiltration PressureOutput2
+sle rMode2 rPressureOutput2 cMaxPressure
+
+and rMode rMode rMode2
+
+jal update_state
+j start
+
+update_state:
+
+s dFiltration Mode rMode
+j ra

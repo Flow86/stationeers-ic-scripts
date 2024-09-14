@@ -1,12 +1,14 @@
 # Chip for an Filtration Unit with two Pumps
+# In Pump should be set to 9L
+# Out & Filtered Pump should be set to 10L, Out always on
 # written by Flow86
 
-define cMinInputPressure 10000 # Pa
-define cMaxInputPressure 45000 # Pa
-define cMaxOutputPressure 30000 # Pa
+define cMinInputPressure 1000 # kPa
+define cMaxInputPressure 45000 # kPa
+define cMaxOutputPressure 30000 # kPa
 
-alias dPump1 d0
-alias dPump2 d1
+alias dPumpIn d0
+alias dPumpFiltered d1
 alias dFiltration db
 
 alias rPump1 r0
@@ -44,10 +46,10 @@ yield
 j start
 
 update_state:
-brdns dPump1 2
-s dPump1 On rPump1
-brdns dPump2 2
-s dPump2 On rPump2
+brdns dPumpIn 2
+s dPumpIn On rPump1
+brdns dPumpFiltered 2
+s dPumpFiltered On rPump2
 
 s dFiltration Mode rMode
 j ra
